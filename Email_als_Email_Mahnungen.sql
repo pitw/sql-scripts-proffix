@@ -1,7 +1,7 @@
 DECLARE @AdressNrADR int
 DECLARE @Email char(50)
 
-/****** Variable @LaufNr als tiefste LaufNr aus ADR_Kommunikation setzen! ******/
+/****** Variable @LaufNr als nächste LaufNr aus ADR_Kommunikation setzen! ******/
 DECLARE @LaufNr int = 16
 
 DECLARE cursor_mahnungen CURSOR FOR
