@@ -1,48 +1,55 @@
-DECLARE @AdressNrADR int
-DECLARE @Email char(50)
+DECLARE @AdressNrADR INT 
+DECLARE @Email CHAR(50) 
+/****** Variable @LaufNr wird als nächste LaufNr von ADR_Kommunikation gesetzt ******/ 
+DECLARE @LaufNr INT 
 
-/****** Variable @LaufNr als nächste LaufNr aus ADR_Kommunikation setzen! ******/
-DECLARE @LaufNr int = 16
+SET @LaufNr = (SELECT Max(laufnr) + 1 
+               FROM   adr_kommunikation) 
 
-DECLARE cursor_mahnungen CURSOR FOR
-SELECT AdressNrADR,EMail FROM dbo.ADR_Adressen 
-WHERE dbo.ADR_Adressen.EMail IS NOT NULL
-OPEN cursor_mahnungen
+DECLARE cursor_mahnungen CURSOR FOR 
+  SELECT adressnradr AS Adressnr, 
+         email 
+  FROM   adr_adressen 
+  WHERE  adr_adressen.email IS NOT NULL 
+         AND adressnradr NOT IN (SELECT adressnradr 
+                                 FROM   adr_kommunikation 
+                                 WHERE  telefonbez = 'E-Mail Mahnung') 
 
-FETCH NEXT FROM cursor_mahnungen
-INTO @AdressNrADR, @Email
+OPEN cursor_mahnungen 
 
-WHILE @@FETCH_STATUS = 0
-BEGIN
-    INSERT INTO [dbo].[ADR_Kommunikation]
-           ([AdressNrADR]
-           ,[TelefonBez]
-           ,[TelefonNr]
-           ,[ImportNr]
-           ,[ErstelltAm]
-           ,[ErstelltVon]
-           ,[GeaendertAm]
-		   ,LaufNr
-           ,[GeaendertVon]
-           ,[Geaendert]
-           ,[Exportiert])
-     VALUES
-           (@AdressNrADR
-           ,'E-Mail Mahnung'
-           ,REPLACE(@Email, ' ', '')
-           ,0
-           ,GETDATE()
-           ,'ADMIN'
-           ,GETDATE()
-		   ,@LaufNr
-           ,'ADMIN'
-           ,1
-           ,0)
-SET @LaufNr=@LaufNr+1
+FETCH next FROM cursor_mahnungen INTO @AdressNrADR, @Email 
 
-    FETCH NEXT FROM my_cursor
-INTO @AdressNrADR, @Email
-END
+WHILE @@FETCH_STATUS = 0 
+  BEGIN 
+      INSERT INTO [dbo].[adr_kommunikation] 
+                  ([adressnradr], 
+                   [telefonbez], 
+                   [telefonnr], 
+                   [importnr], 
+                   [erstelltam], 
+                   [erstelltvon], 
+                   [geaendertam], 
+                   laufnr, 
+                   [geaendertvon], 
+                   [geaendert], 
+                   [exportiert]) 
+      VALUES      (@AdressNrADR, 
+                   'E-Mail Mahnung', 
+                   Replace(@Email, ' ', ''), 
+                   0, 
+                   Getdate(), 
+                   'ADMIN', 
+                   Getdate(), 
+                   @LaufNr, 
+                   'ADMIN', 
+                   1, 
+                   0) 
 
-CLOSE cursor_mahnungen
-DEALLOCATE cursor_mahnungen
+      SET @LaufNr=@LaufNr + 1 
+
+      FETCH next FROM cursor_mahnungen INTO @AdressNrADR, @Email 
+  END 
+
+CLOSE cursor_mahnungen 
+
+DEALLOCATE cursor_mahnungen 
